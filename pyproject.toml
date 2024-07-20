@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "spark-log-analyser"
+version = "0.1.0"
+description = "Spark log analyser, merging Apache with Application logs"
+authors = ["Fernando Abreu <49952773+nandoabreu@users.noreply.github.com>"]
+license = "MIT License"
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+prettyconf = "^2.2.1"
+python-dateutil = "^2.9.0.post0"
+confluent-kafka = "^2.5.0"
+pyspark = "^3.5.1"
+dash = "^2.17.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
