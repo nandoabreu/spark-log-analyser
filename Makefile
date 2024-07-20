@@ -25,3 +25,6 @@ setup-dev:
 	@[ -f .python-version ] && poetry env use $(shell cat .python-version) >/dev/null || true
 	@poetry install -v
 
+
+test-create-http-logs:
+	@poetry run python tests/scripts/create-http-logs.py
