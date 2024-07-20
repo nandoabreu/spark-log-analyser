@@ -26,7 +26,8 @@ HTTP_LOGS_TIMEZONE = config("HTTP_LOGS_TIMEZONE", default="+00:00")
 setlocale(LC_TIME, "{}.UTF-8".format(HTTP_LOGS_LANG))
 print("Locale set: {}".format(HTTP_LOGS_LANG))
 
-LOG_LINES = config("LOG_LINES", default="100", cast=int)
+HTTP_LOG_LINES = config("HTTP_LOG_LINES", default="99", cast=int)
+LOGS_PATH = "{}/http-access.log".format(HTTP_LOGS_DIR)
 
 try:
     users = list(MOCKED_REQUESTERS) * 3 + ["-"]

@@ -27,4 +27,4 @@ setup-dev:
 
 
 test-create-http-logs:
-	@poetry run python tests/scripts/create-http-logs.py
+	@poetry run python tests/scripts/create-http-logs.py @HTTP_LOG_LINES=${HTTP_LOG_LINES}
