@@ -3,7 +3,6 @@ from datetime import datetime as _dt
 from locale import LC_TIME, setlocale
 from logging import Formatter, getLogger
 from logging.handlers import RotatingFileHandler
-from os import environ
 from os import makedirs
 from prettyconf import config
 from random import random, sample
