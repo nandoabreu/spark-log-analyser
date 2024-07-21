@@ -12,7 +12,7 @@ Compatibility with Linux environment:
 > and beginning with an alphabetic character or an underscore.
     - Keys are case-insensitive, all variable names will be exported upper-cased;
     - All keys must start with a letter or will be ignored;
-    - Dashes/hyphens in a key name will be converted to an underline/undescore;
+    - Dashes/hyphens in a key name will be converted to an underline/underscore;
     - Non alphanum characters will be stripped when exporting, except for the underscore char.
 
 To export to Production Environment (default), run from project's root directory:
