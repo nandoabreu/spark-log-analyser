@@ -21,23 +21,31 @@ MOCKED_REQUESTERS = {
     "calasans@home.homenet": "10.1.1.17",
 }
 
-MOCKED_REQUESTS = ("/", "/index", "/user", "/product?123")
+MOCKED_REQUESTS = ("/", "/index", "/users", "/user?123", "/product?654", "/purchase")
 
-HTTP_LOGS_DIR = config("HTTP_LOGS_DIR", default="/tmp/tests/http")
-HTTP_LOGS_LANG = config("HTTP_LOGS_LANG", default="en_US")
-HTTP_LOGS_TIMEZONE = config("HTTP_LOGS_TIMEZONE", default="+00:00")
+LOG_TYPE = config("LOG_TYPE", default="http").upper()
+LOGS_DIR = config("{}_LOGS_DIR".format(LOG_TYPE), default="/tmp/tests/http")
+LOGS_LANG = config("{}_LOGS_LANG".format(LOG_TYPE), default="en_US")
+LOGS_TIMEZONE = config("{}_LOGS_TIMEZONE".format(LOG_TYPE), default="+00:00")
 
-setlocale(LC_TIME, "{}.UTF-8".format(HTTP_LOGS_LANG))
-print("Locale set to {}".format(HTTP_LOGS_LANG))
+LOG_PATTERN = r'{ip} - {user} [{timestamp}] "{method} {uri} HTTP/9.9" {code} 999'
+TIMESTAMP_PATTERN = r"%d/%b/%Y:%H:%M:%S {timezone}"
+LOGS_PATH = "{}/http-access.log".format(LOGS_DIR)
+
+if LOG_TYPE == "APP":
+    LOG_PATTERN = r'{timestamp} [{level}] {page}: {message} {param}'
+    TIMESTAMP_PATTERN = r"%F %T"
+    LOGS_PATH = "{}/app.log".format(LOGS_DIR)
 
 HTTP_LOG_LINES = config("HTTP_LOG_LINES", default="99", cast=int)
 LOGS_PATH = "{}/http-access.log".format(HTTP_LOGS_DIR)
+LOG_LINES = config("LOG_LINES", default="99", cast=int)
 
 try:
     created_logs = -1
     users = list(MOCKED_REQUESTERS) * 3 + ["-"]
 
-    makedirs(HTTP_LOGS_DIR, exist_ok=True)
+    makedirs(LOGS_DIR, exist_ok=True)
     handler = RotatingFileHandler(LOGS_PATH, maxBytes=100 * 1024, backupCount=3)
     formatter = Formatter('%(message)s')
     handler.setFormatter(formatter)
