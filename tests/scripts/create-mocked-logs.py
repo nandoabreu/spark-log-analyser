@@ -6,12 +6,8 @@ from logging.handlers import RotatingFileHandler
 from os import makedirs
 from prettyconf import config
 from random import random, sample
+from re import match
 from time import sleep
-
-# 10.4.0.1 - - [18/Apr/2024:14:38:42 +0100] "GET / HTTP/1.1" 200 43229
-# 10.4.0.1 - remoteuser [18/Apr/2024:14:37:15 +0100] "POST /dosignin HTTP/1.1" 302 185
-# 10.4.0.1 - remoteuser [18/Apr/2024:14:39:02 +0100] "GET /status/operational.json?agent=banner HTTP/1.1" 200 6191
-HTTP_LOG_PATTERN = r'{ip} - {user} [{timestamp}] "{method} {uri} HTTP/9.9" {code} 999'
 
 MOCKED_REQUESTERS = {
     "nando@company.co": "45.33.32.156",
@@ -37,9 +33,13 @@ if LOG_TYPE == "APP":
     TIMESTAMP_PATTERN = r"%F %T"
     LOGS_PATH = "{}/app.log".format(LOGS_DIR)
 
-HTTP_LOG_LINES = config("HTTP_LOG_LINES", default="99", cast=int)
-LOGS_PATH = "{}/http-access.log".format(HTTP_LOGS_DIR)
 LOG_LINES = config("LOG_LINES", default="99", cast=int)
+
+print("# To limit the number of logs, run `make test-create-http-logs LOG_LINES=100` or edit env.toml")
+print("# Other vars can be set in the [dev] session of the env.toml file before running from `make`")
+
+setlocale(LC_TIME, "{}.UTF-8".format(LOGS_LANG))
+print("Locale set to {}.UTF-8. Start creation of mocked logs for {}:".format(LOGS_LANG, LOG_TYPE))
 
 try:
     created_logs = -1
@@ -52,28 +52,37 @@ try:
     log = getLogger()
     log.setLevel("DEBUG")
     log.addHandler(handler)
-    print("Start creating {} lines of log".format(HTTP_LOG_LINES))
-    print("+ to limit the number of logs, run `make test-create-http-logs HTTP_LOG_LINES=100` or edit env.toml")
-    print("+ other vars cane be set in the [dev] session of the env.toml file: ")
 
-    for created_logs in range(HTTP_LOG_LINES):
-        user = sample(users, k=1)[0]
-        ip = MOCKED_REQUESTERS.get(user, "199.199.199.199")
-        timestamp = (_dt.now()).strftime("%d/%b/%Y:%H:%M:%S {}".format(HTTP_LOGS_TIMEZONE))
-        method = sample(("GET", "GET", "GET", "POST", "POST", "PUT"), k=1)[0]
-        code = sample((200, 200, 200, 201, 201, 302, 401, 503), k=1)[0]
-        uri = sample(MOCKED_REQUESTS, k=1)[0]
+    for created_logs in range(LOG_LINES):
+        log_vars = {"timestamp": _dt.now().strftime(TIMESTAMP_PATTERN.format(timezone=LOGS_TIMEZONE))}
 
-        log.debug(HTTP_LOG_PATTERN.format(ip=ip, user=user, timestamp=timestamp, method=method, uri=uri, code=code))
+        if LOG_TYPE == "APP":
+            level = sample(("DEBUG", "DEBUG", "INFO", "INFO", "WARNING", "ERROR", "CRITICAL"), k=1)[0]
+            uri = match(r"^/([^?]*)\??(.*)$", sample(MOCKED_REQUESTS, k=1)[0])
+            msg = "Process failed" if level in ("ERROR", "CRITICAL") else "Respond request"
 
-        if (created_logs + 1) % min(int(HTTP_LOG_LINES * .1), 100) == 0:
-            print("Created {} lines of log".format(created_logs + 1))
+            log_vars["level"] = level
+            log_vars["page"] = uri.group(1) or "index"
+            log_vars["message"] = "{} for {}".format(msg, uri.group(1) or "/")
+            log_vars["param"] = uri.group(2)
 
-        if (created_logs + 1) % 3:
-            sleep(random())
+        else:
+            log_vars["user"] = sample(users, k=1)[0]
+            log_vars["ip"] = MOCKED_REQUESTERS.get(log_vars["user"], "199.199.199.199")
+            log_vars["method"] = sample(("GET", "GET", "GET", "POST", "POST", "PUT"), k=1)[0]
+            log_vars["code"] = sample((200, 200, 200, 201, 201, 302, 401, 503), k=1)[0]
+            log_vars["uri"] = sample(MOCKED_REQUESTS, k=1)[0]
+
+        log.debug(LOG_PATTERN.format(**log_vars))
+
+        if created_logs > 0:
+            print("\rCreated {}/{} lines of log ".format(created_logs + 1, LOG_LINES), end="")
+
+            if created_logs % 3 == 0:
+                sleep(random())
 
 except KeyboardInterrupt:
-    pass
+    print("\rCreation aborted by user request.")
 
 finally:
-    print("Created {} lines of log in {}".format(created_logs + 1, HTTP_LOGS_DIR))
+    print("\rCreated {} lines of log in {}".format(created_logs + 1, LOGS_DIR))
