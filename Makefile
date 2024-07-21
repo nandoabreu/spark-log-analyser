@@ -26,6 +26,10 @@ setup-dev:
 	@poetry install -v
 
 
+test-start-kafka:
+	@podman run --rm -d --hostname=kafka --name=kafka -p 9092:9092 \
+		docker.io/apache/kafka:3.7.0
+
 test-create-mocked-logs:
 	@LOG_TYPE=HTTP LOG_LINES=300 poetry run python tests/scripts/create-mocked-logs.py
 	@LOG_TYPE=APP LOG_LINES=300 poetry run python tests/scripts/create-mocked-logs.py

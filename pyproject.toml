@@ -16,6 +16,8 @@ confluent-kafka = "^2.5.0"
 pyspark = "^3.5.1"
 dash = "^2.17.1"
 
+[tool.poetry.group.dev.dependencies]
+pandas = "^2.2.2"
 
 [build-system]
 requires = ["poetry-core"]
