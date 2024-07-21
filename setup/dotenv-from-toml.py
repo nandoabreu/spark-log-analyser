@@ -15,20 +15,20 @@ Compatibility with Linux environment:
     - Dashes/hyphens in a key name will be converted to an underline/undescore;
     - Non alphanum characters will be stripped when exporting, except for the underscore char.
 
-To export to Production Envirnoment (default), run from project's root directory:
+To export to Production Environment (default), run from project's root directory:
     `poetry run python setup/dotenv-from-toml.py`
     Note: all variables from the [prod] group in env.toml will be exported
 
-To export to Development Envirnoment, run from project's root directory:
+To export to Development Environment, run from project's root directory:
     `run=dev poetry run python setup/dotenv-from-toml.py`
     Note: all variables from the [prod] group in env.toml will be parsed, then all [dev] vars,
-          meaning that keys repeted in [prod] and [dev] will be exported with the value in the [dev] group
+          meaning that keys repeated in [prod] and [dev] will be exported with the value in the [dev] group
 
 Any other group set in env.toml can be exported just like dev and such as dev,
 prod keys are parsed and updated by this other group:
     `run=other poetry run python setup/dotenv-from-toml.py`
 
-There shall not be a duplicatted key in a same group and file. Use a TOML linter.
+There shall not be a duplicated key in a same group and file. Use a TOML linter.
 Repeated keys in different files or groups will be exported with the last fetched value.
 Keys in env.toml starting with or having "-" on any part will not be exported.
 """
