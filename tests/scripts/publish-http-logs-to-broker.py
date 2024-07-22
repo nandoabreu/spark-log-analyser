@@ -18,18 +18,11 @@ Some names have special processing:
 - "<column-name>:quoted" informs about values with spaces that must not be split
 """
 from datetime import datetime as _dt
-from concurrent.futures import ThreadPoolExecutor, wait
 from gc import collect as collect_garbage
 from glob import glob
-from json import dumps
 from pathlib import Path
-from re import sub
 
 import pandas as pd
-from confluent_kafka import (
-    Producer as KafkaProducer,
-    KafkaException,  # noqa
-)
 
 import app.config as cfg
 from Broker import Producer
@@ -50,14 +43,15 @@ TOPIC_PER_LOGS_DIR = {
 class LogPublisher:
     def __init__(self, logs_dir: str, topic: str):
         self.__logs_dir = logs_dir
-        self.__topic = topic
         self.__state_file = Path(f"{logs_dir}/.last_published_state_file")
+        self.__topic = topic
+        self.__broker = None
 
         self.__last_published_log_epoch = self.__fetch_last_published_log_epoch()
         self.__candidate_log_files = self.__update_candidate_log_files()
 
-        print("Publish logs younger than {}".format(
-            pd.to_datetime(self.__last_published_log_epoch, unit="s", utc=True)
+        print("Publish logs younger than {:%F %T}".format(
+            pd.to_datetime(self.__last_published_log_epoch, unit="s")
         ))
 
     @property
@@ -73,12 +67,13 @@ class LogPublisher:
             print(f"- Fetch log lines from {path}")
 
             for log_epoch, log_str in self.__fetch_log_lines(f):
-                print(log_str)  # todo: publish, store last epoch
-
                 if self.__last_published_log_epoch > log_epoch:
                     continue
 
-                # p.produce(topic=topic, key=key, data=msg, epoch_ms=msg_epoch_ms)
+                if not self.__broker:
+                    self.__broker = Producer()
+
+                self.__broker.produce(topic=self.__topic, data=log_str, epoch_ms=log_epoch)
 
                 if path not in published:
                     published[path] = {"count": 0, "last_log_epoch": 0.0}
@@ -89,6 +84,8 @@ class LogPublisher:
 
         if not published:
             print("No candidate log files or all logs already sent")
+            self.__last_published_log_epoch = _dt.now().timestamp()
+            self.__store_last_published_log_epoch()
             return
 
         overall_last_log_epoch = max([published[path]["last_log_epoch"] for path in published])
@@ -97,7 +94,7 @@ class LogPublisher:
 
         if overall_last_log_epoch > self.__last_published_log_epoch:
             self.__last_published_log_epoch = overall_last_log_epoch
-            self.__store_last_published_log_timestamp()
+            self.__store_last_published_log_epoch()
 
     def __fetch_last_published_log_epoch(self) -> float:
         ts = 0.0
@@ -186,8 +183,11 @@ class LogPublisher:
 
             yield log_epoch, " ".join(row)
 
-    def __store_last_published_log_timestamp(self):
-        print(f"TODO: STORE THIS: {self.__last_published_log_epoch=}")
+    def __store_last_published_log_epoch(self):
+        with open(self.__state_file, "w") as f:
+            f.write(str(self.__last_published_log_epoch))
+
+        print("State persisted")
 
 
 def run():
