@@ -36,6 +36,7 @@ test-create-mocked-logs:
 
 test-publish-mocked-logs:
 	@PYTHONPATH=src poetry run python tests/scripts/publish-http-logs-to-broker.py
+	@PYTHONPATH=src poetry run python tests/scripts/publish-app-logs-to-broker.py
 
 test-created-topics:
 	podman exec -it kafka ls -ltr /tmp/kraft-combined-logs | grep -e requests -e responses
