@@ -37,9 +37,11 @@ class Producer:
             data = [data]
 
         for d in data:
+            d = dumps(d, separators=(',', ':'), sort_keys=True).encode() if isinstance(d, dict) else d.encode()
+
             self.__producer.produce(
                 topic=topic,
-                value=dumps(d, separators=(',', ':'), sort_keys=True).encode(),
+                value=d,
                 timestamp=int(epoch_ms * 1000000),
                 callback=self.__report,
             )
@@ -49,6 +51,6 @@ class Producer:
         self.__producer.flush(timeout=3)
 
     @staticmethod
-    def __report(error):
+    def __report(error, message):
         if error:
-            print(f"Message not delivered: {error}")
+            print(f"{error}: Not delivered: {message}")
