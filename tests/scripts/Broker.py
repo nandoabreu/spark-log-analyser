@@ -1,13 +1,8 @@
 #!/usr/bin/env python
 """Broker manager for publishing messages"""
-from datetime import datetime as _dt
-from concurrent.futures import ThreadPoolExecutor, wait
 from json import dumps
 
-from confluent_kafka import (
-    Producer as KafkaProducer,
-    KafkaException,  # noqa
-)
+from confluent_kafka import Producer as KafkaProducer
 
 import app.config as cfg
 
@@ -28,24 +23,24 @@ class Producer:
 
         self.__counter = 0
 
-    def produce(self, data: (dict, iter), topic: str = "my_topic", key=None, epoch_ms=None):
+    def produce(self, topic: str, data: (str, dict, iter), epoch_ms: float) -> None:
+        """Publishes a message to a specified topic
+
+        Args:
+            topic (str): The name of the topic to publish to
+            data (str, dict, iter): The message to be published (can be string, dictionary, or iterable)
+            epoch_ms (float): The epoch timestamp, as in "1721666946" or "1721666946.053233"
+        """
         self.__producer.poll(timeout=0)  # fetch previous calls
 
-        if isinstance(data, dict):
+        if isinstance(data, (str, dict)):
             data = [data]
 
         for d in data:
-            if not isinstance(d, dict):
-                print(f"Skip message (not dict): {d}")
-                continue
-
-            now = _dt.utcnow()
             self.__producer.produce(
-                timestamp=epoch_ms,
                 topic=topic,
-                headers=[],
-                key=key.encode() if key else None,
                 value=dumps(d, separators=(',', ':'), sort_keys=True).encode(),
+                timestamp=int(epoch_ms * 1000000),
                 callback=self.__report,
             )
             self.__counter += 1
@@ -54,10 +49,6 @@ class Producer:
         self.__producer.flush(timeout=3)
 
     @staticmethod
-    def __report(error, message=None):
+    def __report(error):
         if error:
             print(f"Message not delivered: {error}")
-        # else:
-        #     print('Delivered to {!r} at partition {}: {}'.format(
-        #         message.topic(), message.partition(), message.value().decode()
-        #     ))
