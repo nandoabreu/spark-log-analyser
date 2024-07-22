@@ -67,28 +67,37 @@ class LogPublisher:
 
     def publish(self) -> None:
         published = {}
-        last_published_log_epoch = 0
 
         for f in sorted(self.__candidate_log_files, reverse=True):
-            print(f"- Fetch log lines from {f.as_posix()}")
+            path = f.as_posix()
+            print(f"- Fetch log lines from {path}")
 
-            for data in self.__fetch_log_lines(f):
+            for log_epoch, log_str in self.__fetch_log_lines(f):
+                print(log_str)  # todo: publish, store last epoch
+
+                if self.__last_published_log_epoch > log_epoch:
+                    continue
+
                 # p.produce(topic=topic, key=key, data=msg, epoch_ms=msg_epoch_ms)
-                print(data)  # todo: check data, publish, update published, update last_published_log_epoch if greater
-                pass
 
-                if f.as_posix() not in published:
-                    published[f.as_posix()] = 0
+                if path not in published:
+                    published[path] = {"count": 0, "last_log_epoch": 0.0}
+
+                published[path]["count"] += 1
+                if log_epoch > published[path]["last_log_epoch"]:
+                    published[path]["last_log_epoch"] = log_epoch
 
         if not published:
             print("No candidate log files or all logs already sent")
             return
 
-        if last_published_log_epoch > self.__last_published_log_epoch:
-            self.__last_published_log_epoch = last_published_log_epoch
-            self.__store_last_published_log_timestamp()
+        overall_last_log_epoch = max([published[path]["last_log_epoch"] for path in published])
+        overall_log_publish_count = sum([published[path]["count"] for path in published])
+        print(f"Published messages to broker: {overall_log_publish_count}")
 
-        print("Published to ")
+        if overall_last_log_epoch > self.__last_published_log_epoch:
+            self.__last_published_log_epoch = overall_last_log_epoch
+            self.__store_last_published_log_timestamp()
 
     def __fetch_last_published_log_epoch(self) -> float:
         ts = 0.0
@@ -178,7 +187,7 @@ class LogPublisher:
             yield log_epoch, " ".join(row)
 
     def __store_last_published_log_timestamp(self):
-        pass
+        print(f"TODO: STORE THIS: {self.__last_published_log_epoch=}")
 
 
 def run():
