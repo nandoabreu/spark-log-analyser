@@ -114,6 +114,16 @@ class LogPublisher:
         return files
 
     def __fetch_log_lines(self, source: Path) -> iter:
+        """Parses log lines from a given source file path
+
+        Args:
+            source (Path): Path to the log file
+
+        Returns:
+            Generator of tuples. Each tuple contains:
+            - Timestamp (float): The epoch of the log line or -1 if not parsed
+            - Log line (str): The raw log line
+        """
         targeted_cols = [i for i, col in enumerate(HTTP_LOG_PATTERN) if col != "ignore"]
         ignored_cols = list(set(range(len(HTTP_LOG_PATTERN))) - set(targeted_cols))
         quoted_cols = [c for i, c in enumerate(HTTP_LOG_PATTERN) if ":quoted" in c and i not in ignored_cols]
@@ -148,7 +158,12 @@ class LogPublisher:
 
         for _, tupled_row in filtered_df.iterrows():
             row = []
-            row_datetime = tupled_row.get("datetime", tupled_row.get("timestamp"))
+
+            log_epoch = tupled_row.get("datetime")
+            if not log_epoch:
+                log_epoch = tupled_row.get("timestamp", -1)
+            else:
+                log_epoch = log_epoch.timestamp()
 
             for i, tupled_data in enumerate(tupled_row.items()):
                 if i in temporary_cols:
@@ -160,7 +175,7 @@ class LogPublisher:
             for i in sorted(ignored_cols, reverse=True):
                 row.insert(i, "-")
 
-            yield row_datetime, " ".join(row)
+            yield log_epoch, " ".join(row)
 
     def __store_last_published_log_timestamp(self):
         pass
