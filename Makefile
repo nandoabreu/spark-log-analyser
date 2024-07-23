@@ -27,8 +27,14 @@ setup-dev:
 
 
 test-start-kafka:
-	@podman run --rm -d --hostname=kafka --name=kafka -p 9092:9092 \
-		docker.io/apache/kafka:3.7.0
+	@podman run --rm -d --network=host --hostname=kafka --name=kafka docker.io/apache/kafka:3.7.0
+	@echo "Kafka service running on" \
+		$(shell podman logs kafka | grep Awaiting.*connections | tail -1 | sed "s,.*connections on \(.*\)\. .*,\1,") \
+
+test-start-kafka-ui:
+	@podman run --rm -d --network=host -it --hostname=kafka-ui --name=kafka-ui \
+		-e DYNAMIC_CONFIG_ENABLED=true \
+		docker.io/provectuslabs/kafka-ui
 
 test-create-mocked-logs:
 	@LOG_TYPE=HTTP LOG_LINES=300 poetry run python tests/scripts/create-mocked-logs.py
