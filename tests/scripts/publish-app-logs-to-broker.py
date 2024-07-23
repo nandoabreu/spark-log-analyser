@@ -40,9 +40,8 @@ class LogPublisher:
         ))
 
     @property
-    def candidate_log_files(self) -> iter:
-        for f in sorted(self.__candidate_log_files):
-            yield f.as_posix()
+    def candidate_log_files(self) -> tuple:
+        return tuple(f.as_posix() for f in sorted(self.__candidate_log_files))
 
     def publish(self) -> None:
         published = {}
