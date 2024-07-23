@@ -32,8 +32,8 @@ class LogPublisher:
         self.__topic = topic
         self.__broker = None
 
-        self.__last_published_log_epoch = self.__fetch_last_published_log_epoch()
-        self.__candidate_log_files = self.__update_candidate_log_files()
+        self.last_published_log_epoch = self.__fetch_last_published_log_epoch()
+        self.__candidate_log_files = self.update_candidate_log_files()
 
         log.debug("Publish logs younger than {:%F %T}".format(
             pd.to_datetime(self.last_published_log_epoch, unit="s")
@@ -50,8 +50,8 @@ class LogPublisher:
             path = f.as_posix()
             log.debug(f"Fetch log lines from {path}")
 
-            for log_epoch, log_str in self.__fetch_log_lines(f):
-                if self.__last_published_log_epoch > log_epoch:
+            for log_epoch, log_str in self.fetch_log_lines(f):
+                if self.last_published_log_epoch > log_epoch:
                     continue
 
                 if not self.__broker:
@@ -67,9 +67,8 @@ class LogPublisher:
                     published[path]["last_log_epoch"] = log_epoch
 
         if not published:
-            print("No candidate log files or all logs already sent")
-            self.__last_published_log_epoch = _dt.now().timestamp()
             log.info("No candidate log files or all logs already sent")
+            self.last_published_log_epoch = _dt.now().timestamp()
             self.__store_last_published_log_epoch()
             return
 
@@ -77,8 +76,8 @@ class LogPublisher:
         overall_log_publish_count = sum([published[path]["count"] for path in published])
         log.info(f"Published messages to broker: {overall_log_publish_count}")
 
-        if overall_last_log_epoch > self.__last_published_log_epoch:
-            self.__last_published_log_epoch = overall_last_log_epoch
+        if overall_last_log_epoch > self.last_published_log_epoch:
+            self.last_published_log_epoch = overall_last_log_epoch
             self.__store_last_published_log_epoch()
 
     def __fetch_last_published_log_epoch(self) -> float:
@@ -104,7 +103,7 @@ class LogPublisher:
 
         return files
 
-    def __fetch_log_lines(self, source: Path) -> iter:
+    def fetch_log_lines(self, source: Path) -> iter:
         """Parses log lines from a given source file path
 
         Args:
@@ -140,15 +139,15 @@ class LogPublisher:
         df[0] = pd.to_datetime(df[datetime_cols].astype(str).agg(' '.join, axis=1))
         df.drop(df.columns[1:-1], axis=1, inplace=True)
 
-        last_published_datetime = pd.to_datetime(self.__last_published_log_epoch, unit="s")
         df = df[df[0].to_numpy() > last_published_datetime]
+        last_published_datetime = pd.to_datetime(self.last_published_log_epoch, unit="s")
 
         for row in df.values:
             yield row[0].timestamp(), row[1]
 
     def __store_last_published_log_epoch(self):
         with open(self.__state_file, "w") as f:
-            f.write(str(self.__last_published_log_epoch))
+            f.write(str(self.last_published_log_epoch))
 
         log.info("State persisted")
 
