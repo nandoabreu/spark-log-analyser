@@ -143,8 +143,8 @@ class LogPublisher:
             log.error(f"Unable to interpret a datetime patten from the first line of {source.as_posix()}")
             return
 
-        df[0] = pd.to_datetime(df[datetime_cols].astype(str).agg(' '.join, axis=1))
-        df.drop(df.columns[1:-1], axis=1, inplace=True)
+        df[0] = pd.to_datetime(df[datetime_cols].astype(str).agg(' '.join, axis="columns"))
+        df.drop(df.columns[1:-1], axis="columns", inplace=True)
 
         last_published_datetime = pd.to_datetime(self.last_published_log_epoch, unit="s")
         df = df[df[0] > last_published_datetime]
