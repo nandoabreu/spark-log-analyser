@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Broker manager for publishing messages"""
+import logging as log
 from json import dumps
 
 from confluent_kafka import Producer as KafkaProducer
@@ -12,6 +13,8 @@ TOPIC_PER_LOGS_DIR = {
     "/tmp/tests/app": "responses",
 }
 
+log.basicConfig(level=log.DEBUG, format='%(asctime)s - %(message)s')
+
 
 class Producer:
     """Broker manager to publish messages to topics"""
@@ -19,7 +22,7 @@ class Producer:
     def __init__(self):
         """Initialize Publisher"""
         self.__producer = KafkaProducer(KAFKA_SERVERS)
-        print(f"Connected to: {cfg.KAFKA_SERVERS}")
+        log.info(f'Connection established with: {", ".join(cfg.KAFKA_SERVERS)}')
 
         self.__counter = 0
 
@@ -53,4 +56,4 @@ class Producer:
     @staticmethod
     def __report(error, message):
         if error:
-            print(f"{error}: Not delivered: {message}")
+            log.error(f"{error}: Not delivered: {message}")
