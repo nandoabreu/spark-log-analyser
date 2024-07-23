@@ -35,8 +35,8 @@ class LogPublisher:
         self.__last_published_log_epoch = self.__fetch_last_published_log_epoch()
         self.__candidate_log_files = self.__update_candidate_log_files()
 
-        print("Publish logs younger than {:%F %T}".format(
-            pd.to_datetime(self.__last_published_log_epoch, unit="s")
+        log.debug("Publish logs younger than {:%F %T}".format(
+            pd.to_datetime(self.last_published_log_epoch, unit="s")
         ))
 
     @property
@@ -48,7 +48,7 @@ class LogPublisher:
 
         for f in sorted(self.__candidate_log_files, reverse=True):
             path = f.as_posix()
-            print(f"- Fetch log lines from {path}")
+            log.debug(f"Fetch log lines from {path}")
 
             for log_epoch, log_str in self.__fetch_log_lines(f):
                 if self.__last_published_log_epoch > log_epoch:
@@ -69,12 +69,13 @@ class LogPublisher:
         if not published:
             print("No candidate log files or all logs already sent")
             self.__last_published_log_epoch = _dt.now().timestamp()
+            log.info("No candidate log files or all logs already sent")
             self.__store_last_published_log_epoch()
             return
 
         overall_last_log_epoch = max([published[path]["last_log_epoch"] for path in published])
         overall_log_publish_count = sum([published[path]["count"] for path in published])
-        print(f"Published messages to broker: {overall_log_publish_count}")
+        log.info(f"Published messages to broker: {overall_log_publish_count}")
 
         if overall_last_log_epoch > self.__last_published_log_epoch:
             self.__last_published_log_epoch = overall_last_log_epoch
@@ -89,7 +90,7 @@ class LogPublisher:
 
         return ts
 
-    def __update_candidate_log_files(self) -> list:
+    def update_candidate_log_files(self) -> list:
         files = []
 
         for log_file in sorted(glob(f"{self.__logs_dir}/*log*")):
@@ -98,7 +99,7 @@ class LogPublisher:
 
             f = Path(log_file)
 
-            if f.is_file() and f.stat().st_mtime >= self.__last_published_log_epoch:
+            if f.is_file() and f.stat().st_mtime >= self.last_published_log_epoch:
                 files.append(f)
 
         return files
@@ -133,7 +134,7 @@ class LogPublisher:
                     datetime_cols.append(i)
 
         if not datetime_cols:
-            print(f"Unable to interpret a datetime patten from the first line of {source.as_posix()}")
+            log.error(f"Unable to interpret a datetime patten from the first line of {source.as_posix()}")
             return
 
         df[0] = pd.to_datetime(df[datetime_cols].astype(str).agg(' '.join, axis=1))
@@ -149,7 +150,7 @@ class LogPublisher:
         with open(self.__state_file, "w") as f:
             f.write(str(self.__last_published_log_epoch))
 
-        print("State persisted")
+        log.info("State persisted")
 
 
 def run():
