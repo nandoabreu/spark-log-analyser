@@ -28,13 +28,13 @@ setup-dev:
 
 test-start-kafka:
 	@podman run --rm -d --network=host --hostname=kafka --name=kafka docker.io/apache/kafka:3.7.0
-	@echo "Kafka service running on" \
-		$(shell podman logs kafka | grep Awaiting.*connections | tail -1 | sed "s,.*connections on \(.*\)\. .*,\1,") \
+	@echo "Kafka service should be running on 127.0.0.1, port 9092"
 
 test-start-kafka-ui:
 	@podman run --rm -d --network=host -it --hostname=kafka-ui --name=kafka-ui \
 		-e DYNAMIC_CONFIG_ENABLED=true \
 		docker.io/provectuslabs/kafka-ui
+	@echo "Kafka UI should be running on http://127.0.0.1:8080/"
 
 test-create-mocked-logs:
 	@LOG_TYPE=HTTP LOG_LINES=300 poetry run python tests/scripts/create-mocked-logs.py
