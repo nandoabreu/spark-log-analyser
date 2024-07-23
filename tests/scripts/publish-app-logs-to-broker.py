@@ -18,8 +18,7 @@ from re import compile, match
 
 import pandas as pd
 
-import app.config as cfg
-from Broker import Producer
+from Broker import Producer, log
 
 LOGS_DIR = "/tmp/tests/app"
 BROKER_CONN_SETTINGS = {"bootstrap.servers": ",".join(cfg.KAFKA_SERVERS)}
