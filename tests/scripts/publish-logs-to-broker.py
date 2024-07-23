@@ -11,30 +11,37 @@ it will use the state file to know where to resume from. If older logs need to b
 the recommendations is to rename or remove the log files' directory.
 """
 from datetime import datetime as _dt
-from gc import collect as collect_garbage
 from glob import glob
 from pathlib import Path
-from re import compile, match
+from re import compile, match, sub
 
 import pandas as pd
+from pandas.core.series import Series
 
 from Broker import Producer, log
 
-LOGS_DIR = "/tmp/tests/app"
-BROKER_CONN_SETTINGS = {"bootstrap.servers": ",".join(cfg.KAFKA_SERVERS)}
-BROKER_TOPIC = "responses"
+TOPIC_PER_LOGS_DIR = {
+    "/tmp/tests/http": "requests",
+    "/tmp/tests/app": "responses",
+}
+
 TIMESTAMP_PATTERNS = {
     "%d/%b/%Y": "[1-3][0-9]/[A-z]{3}/[12][0-9][0-9][0-9]",
     "%Y-%m-%d": "[12][0-9][0-9][0-9]-[01][0-9]-[1-3][0-9]",
-    "%H:%M": "[012]?[0-9](:[0-5][0-9]){1}",
+    "%H:%M:%S": "[012]?[0-9](:[0-5][0-9]){2}",
 }
-TIMESTAMP_PATTERNS["%T"] = TIMESTAMP_PATTERNS["%H:%M"].replace("{1}", "{2}")
-TIMESTAMP_PATTERNS["%d/%b/%Y:%H:%M:%S"] = "{}:{}".format(TIMESTAMP_PATTERNS["%d/%b/%Y"], TIMESTAMP_PATTERNS["%T"])
+TIMESTAMP_PATTERNS["%d/%b/%Y:%H:%M:%S"] = "{}:{}".format(TIMESTAMP_PATTERNS["%d/%b/%Y"], TIMESTAMP_PATTERNS["%H:%M:%S"])
+TIMESTAMP_PATTERNS["%H:%M"] = TIMESTAMP_PATTERNS["%H:%M:%S"].replace("{2}", "?")
 TIMESTAMP_PATTERNS["%z"] = "[+-]{}".format(TIMESTAMP_PATTERNS["%H:%M"])
 
 
 class LogPublisher:
     def __init__(self, logs_dir: str, topic: str):
+        if not Path(logs_dir).is_dir():
+            msg = f"Not a directory: {logs_dir}"
+            log.error(msg)
+            raise ValueError(msg)
+
         self.__logs_dir = logs_dir
         self.__state_file = Path(f"{logs_dir}/.last_published_state_file")
         self.__topic = topic
@@ -43,7 +50,10 @@ class LogPublisher:
         self.last_published_log_epoch = self.__fetch_last_published_log_epoch()
         self.__candidate_log_files = self.update_candidate_log_files()
 
-        log.debug("Publish logs younger than {:%F %T}".format(
+        self.__timestamp_patterns = {s: compile(rf"^{p}$") for s, p in TIMESTAMP_PATTERNS.items()}
+        self.__datetime_columns_patterns = None
+
+        log.debug("Publish logs younger than {:%F %T UTC}".format(
             pd.to_datetime(self.last_published_log_epoch, unit="s")
         ))
 
@@ -52,13 +62,19 @@ class LogPublisher:
         return tuple(f.as_posix() for f in sorted(self.__candidate_log_files))
 
     def publish(self) -> None:
-        published = {}
+        published = {
+            "first_in_batch": None,
+            "youngest_log_epoch": 0.0,
+            "count": 0,
+        }
 
         for f in sorted(self.__candidate_log_files, reverse=True):
             path = f.as_posix()
             log.debug(f"Fetch log lines from {path}")
 
             for log_epoch, log_str in self.fetch_log_lines(f):
+                # log.debug("> Fetched: ({}, {!r})".format(log_epoch, log_str))
+
                 if self.last_published_log_epoch > log_epoch:
                     continue
 
@@ -67,25 +83,25 @@ class LogPublisher:
 
                 self.__broker.produce(topic=self.__topic, data=log_str, epoch_ms=log_epoch)
 
-                if path not in published:
-                    published[path] = {"count": 0, "last_log_epoch": 0.0}
+                if not published["first_in_batch"]:
+                    published["first_in_batch"] = (log_epoch, log_str)
+                published["count"] += 1
 
-                published[path]["count"] += 1
-                if log_epoch > published[path]["last_log_epoch"]:
-                    published[path]["last_log_epoch"] = log_epoch
+                if log_epoch > published["youngest_log_epoch"]:
+                    published["youngest_log_epoch"] = log_epoch
 
-        if not published:
+        if not published["count"]:
             log.info("No candidate log files or all logs already sent")
             self.last_published_log_epoch = _dt.now().timestamp()
             self.__store_last_published_log_epoch()
             return
 
-        overall_last_log_epoch = max([published[path]["last_log_epoch"] for path in published])
-        overall_log_publish_count = sum([published[path]["count"] for path in published])
-        log.info(f"Published messages to broker: {overall_log_publish_count}")
+        log.info("Published messages to broker: {}".format(published["count"]))
+        log.info("First published in batch: {}".format(published["first_in_batch"]))
+        log.info("Last published in batch: {}".format((log_epoch, log_str)))
 
-        if overall_last_log_epoch > self.last_published_log_epoch:
-            self.last_published_log_epoch = overall_last_log_epoch
+        if published["youngest_log_epoch"] > self.last_published_log_epoch:
+            self.last_published_log_epoch = published["youngest_log_epoch"]
             self.__store_last_published_log_epoch()
 
     def __fetch_last_published_log_epoch(self) -> float:
@@ -119,7 +135,7 @@ class LogPublisher:
 
         Returns:
             Generator of tuples. Each tuple contains:
-            - Timestamp (float): The epoch of the log line or -1 if not parsed
+            - Epoch (int, float): The epoch of the log line or -1 if not parsed
             - Log line (str): The raw log line
         """
         lines = []
@@ -130,27 +146,46 @@ class LogPublisher:
             return
 
         df = pd.DataFrame([l.strip().split()[:5] + [l.strip()] for l in lines])
+        if not self.__datetime_columns_patterns:
+            self.__parse_datetime_patterns(df.iloc[0])
 
-        timestamp_patterns = [compile(t) for t in TIMESTAMP_PATTERNS.values()]
-
-        datetime_cols = []
-        for i, value in enumerate(df.iloc[0]):
-            for pattern in timestamp_patterns:
-                if match(pattern, str(value)):
-                    datetime_cols.append(i)
-
-        if not datetime_cols:
+        if not self.__datetime_columns_patterns:
             log.error(f"Unable to interpret a datetime patten from the first line of {source.as_posix()}")
             return
 
-        df[0] = pd.to_datetime(df[datetime_cols].astype(str).agg(' '.join, axis="columns"))
+        df[0] = pd.to_datetime(
+            df[
+                [int(c) for c in self.__datetime_columns_patterns]
+            ]
+            .astype(str)
+            .agg(' '.join, axis="columns")
+            .str.replace(r"[^\w/:+-., ]", "", regex=True),
+            format=" ".join(self.__datetime_columns_patterns.values()),
+        ).astype('int64') // 10 ** 9  # cast datetime collection as epoch
         df.drop(df.columns[1:-1], axis="columns", inplace=True)
 
-        last_published_datetime = pd.to_datetime(self.last_published_log_epoch, unit="s")
-        df = df[df[0] > last_published_datetime]
+        df = df[df[0] > self.last_published_log_epoch]
 
         for row in df.values:
-            yield row[0].timestamp(), row[1]
+            yield row
+
+    def __parse_datetime_patterns(self, df_row: Series) -> None:
+        log.debug(f'Try to interpret datetime patterns from {" ".join(df_row.astype(str))!r}')
+        datetime_cols = {}
+
+        for i, value in enumerate(df_row):
+            value = sub(r"[^\w/:+-.,]", "", value)
+            if not value:
+                continue
+
+            for s, pattern in self.__timestamp_patterns.items():
+                if match(pattern, str(value)):
+                    log.debug(f"Datetime [sub]string {value} matches pattern {pattern}")
+                    datetime_cols[str(i)] = s
+                    break
+
+        self.__datetime_columns_patterns = datetime_cols
+        log.debug(f"Set datetime patterns for topic {self.__topic!r}: {self.__datetime_columns_patterns}")
 
     def __store_last_published_log_epoch(self):
         with open(self.__state_file, "w") as f:
@@ -160,8 +195,9 @@ class LogPublisher:
 
 
 def run():
-    publisher = LogPublisher(LOGS_DIR, BROKER_TOPIC)
-    publisher.publish()
+    for logs_dir, topic in TOPIC_PER_LOGS_DIR.items():
+        publisher = LogPublisher(logs_dir, topic)
+        publisher.publish()
 
 
 if __name__ == "__main__":
