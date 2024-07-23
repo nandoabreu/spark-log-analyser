@@ -23,6 +23,14 @@ from Broker import Producer, log
 LOGS_DIR = "/tmp/tests/app"
 BROKER_CONN_SETTINGS = {"bootstrap.servers": ",".join(cfg.KAFKA_SERVERS)}
 BROKER_TOPIC = "responses"
+TIMESTAMP_PATTERNS = {
+    "%d/%b/%Y": "[1-3][0-9]/[A-z]{3}/[12][0-9][0-9][0-9]",
+    "%Y-%m-%d": "[12][0-9][0-9][0-9]-[01][0-9]-[1-3][0-9]",
+    "%H:%M": "[012]?[0-9](:[0-5][0-9]){1}",
+}
+TIMESTAMP_PATTERNS["%T"] = TIMESTAMP_PATTERNS["%H:%M"].replace("{1}", "{2}")
+TIMESTAMP_PATTERNS["%d/%b/%Y:%H:%M:%S"] = "{}:{}".format(TIMESTAMP_PATTERNS["%d/%b/%Y"], TIMESTAMP_PATTERNS["%T"])
+TIMESTAMP_PATTERNS["%z"] = "[+-]{}".format(TIMESTAMP_PATTERNS["%H:%M"])
 
 
 class LogPublisher:
@@ -123,8 +131,7 @@ class LogPublisher:
 
         df = pd.DataFrame([l.strip().split()[:5] + [l.strip()] for l in lines])
 
-        timestamp_patterns = [r"^[12][0-9][0-9][0-9]-[01][0-9]-[1-3][0-9]$", r"^[012]?[0-9](:[0-5][0-9])+$"]
-        timestamp_patterns = [compile(t) for t in timestamp_patterns]
+        timestamp_patterns = [compile(t) for t in TIMESTAMP_PATTERNS.values()]
 
         datetime_cols = []
         for i, value in enumerate(df.iloc[0]):
@@ -139,8 +146,8 @@ class LogPublisher:
         df[0] = pd.to_datetime(df[datetime_cols].astype(str).agg(' '.join, axis=1))
         df.drop(df.columns[1:-1], axis=1, inplace=True)
 
-        df = df[df[0].to_numpy() > last_published_datetime]
         last_published_datetime = pd.to_datetime(self.last_published_log_epoch, unit="s")
+        df = df[df[0] > last_published_datetime]
 
         for row in df.values:
             yield row[0].timestamp(), row[1]
