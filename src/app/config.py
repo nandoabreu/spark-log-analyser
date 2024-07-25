@@ -21,8 +21,9 @@ from prettyconf import config
 
 LOG_LEVEL: str = config('LOG_LEVEL', default='INFO')
 
+
+APP_NAME: str = config('APP_NAME', default='App Name')
 # PROJECT_NAME: str = config('PROJECT_NAME', default='project-name')  # Syntaxes: "lowercasedword", "lowercased-words"
-# APP_NAME: str = config('APP_NAME', default='App Name')
 # APP_VERSION: str = config('APP_VERSION', default='1.0.0')
 # PROJECT_DESCRIPTION: str = config('PROJECT_DESCRIPTION', default='{} v{}'.format(APP_NAME, APP_VERSION))
 
