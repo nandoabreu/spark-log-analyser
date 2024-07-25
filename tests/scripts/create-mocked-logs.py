@@ -9,6 +9,8 @@ from random import random, sample
 from re import match
 from time import sleep
 
+from Broker import TOPIC_PER_LOGS_DIR
+
 MOCKED_REQUESTERS = {
     "nando@company.co": "45.33.32.156",
     "renan@company": "198.51.100.14",
@@ -20,7 +22,7 @@ MOCKED_REQUESTERS = {
 MOCKED_REQUESTS = ("/", "/index", "/users", "/user?123", "/product?654", "/purchase")
 
 LOG_TYPE = config("LOG_TYPE", default="http").upper()
-LOGS_DIR = config("{}_LOGS_DIR".format(LOG_TYPE), default="/tmp/tests/http")
+LOGS_DIR = config("{}_LOGS_DIR".format(LOG_TYPE), default=list(TOPIC_PER_LOGS_DIR.keys())[0])
 LOGS_LANG = config("{}_LOGS_LANG".format(LOG_TYPE), default="en_US")
 LOGS_TIMEZONE = config("{}_LOGS_TIMEZONE".format(LOG_TYPE), default="+00:00")
 

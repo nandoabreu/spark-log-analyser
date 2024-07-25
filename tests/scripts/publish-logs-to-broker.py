@@ -18,12 +18,7 @@ from re import compile, match, sub
 import pandas as pd
 from pandas.core.series import Series
 
-from Broker import Producer, log
-
-TOPIC_PER_LOGS_DIR = {
-    "/tmp/tests/http": "requests",
-    "/tmp/tests/app": "responses",
-}
+from Broker import TOPIC_PER_LOGS_DIR, Producer, log
 
 TIMESTAMP_PATTERNS = {
     "%d/%b/%Y": "[1-3][0-9]/[A-z]{3}/[12][0-9][0-9][0-9]",
