@@ -9,8 +9,8 @@ import app.config as cfg
 
 KAFKA_SERVERS = {"bootstrap.servers": ",".join(cfg.KAFKA_SERVERS)}
 TOPIC_PER_LOGS_DIR = {
-    "/tmp/tests/http": "requests",
-    "/tmp/tests/app": "responses",
+    "/tmp/tests/http": cfg.HTTP_TOPIC_NAME,
+    "/tmp/tests/app": cfg.APP_TOPIC_NAME,
 }
 
 log.basicConfig(level=log.DEBUG, format='%(asctime)s - %(message)s')

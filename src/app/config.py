@@ -26,16 +26,11 @@ LOG_LEVEL: str = config('LOG_LEVEL', default='INFO')
 # APP_VERSION: str = config('APP_VERSION', default='1.0.0')
 # PROJECT_DESCRIPTION: str = config('PROJECT_DESCRIPTION', default='{} v{}'.format(APP_NAME, APP_VERSION))
 
-# APP_DIR: str = config('APP_DIR', default='app')
-# DATA_DIR: str = config('DATA_DIR', default='data')
-# LOGS_DIR: str = config('LOGS_DIR', default='/tmp/{}'.format(PROJECT_NAME))
 
-# LOG_ROTATION_MAX_MB: float = config('LOG_ROTATION_MAX_MB', default=3, cast=float)  # type: ignore
-# LOG_MAX_ROTATED_FILES: int = config('LOG_MAX_ROTATED_FILES', default=9, cast=int)
+HTTP_TOPIC_NAME: str = config('HTTP_TOPIC_NAME', default='requests')
+APP_TOPIC_NAME: str = config('APP_TOPIC_NAME', default='responses')
 
-# DB_CONN_STRING: str = config('DB_CONN_STRING', default=None)
-# API_BIND_HOST: str = config('API_BIND_HOST', default='127.0.0.1')
-# API_BIND_PORT: int = config('API_BIND_PORT', default=5000, cast=int)
+
 # APP_BIND_HOST: str = config('APP_BIND_HOST', default='127.0.0.1')
 # APP_BIND_PORT: int = config('APP_BIND_PORT', default=8080, cast=int)
 
