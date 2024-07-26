@@ -13,7 +13,8 @@ TOPIC_PER_LOGS_DIR = {
     "/tmp/tests/app": cfg.APP_TOPIC_NAME,
 }
 
-log.basicConfig(level=log.DEBUG, format='%(asctime)s - %(message)s')
+# noinspection SpellCheckingInspection
+log.basicConfig(level=cfg.LOG_LEVEL, format='%(asctime)s [%(levelname)s] %(message)s')
 
 
 class Producer:
@@ -22,7 +23,7 @@ class Producer:
     def __init__(self):
         """Initialize Publisher"""
         self.__producer = KafkaProducer(KAFKA_SERVERS)
-        log.info(f'Connection established with: {", ".join(cfg.KAFKA_SERVERS)}')
+        log.debug(f'Connection established with: {", ".join(cfg.KAFKA_SERVERS)!r}')
 
         self.__counter = 0
 

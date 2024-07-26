@@ -75,25 +75,26 @@ class LogPublisher:
 
                 if not self.__broker:
                     self.__broker = Producer()
+                    log.debug(f"Start publishing to topic")
 
                 self.__broker.produce(topic=self.__topic, data=log_str, epoch_ms=log_epoch)
 
                 if not published["first_in_batch"]:
-                    published["first_in_batch"] = (log_epoch, log_str)
+                    published["first_in_batch"] = (log_str, log_epoch)
                 published["count"] += 1
 
                 if log_epoch > published["youngest_log_epoch"]:
                     published["youngest_log_epoch"] = log_epoch
 
         if not published["count"]:
-            log.info("No candidate log files or all logs already sent")
+            log.info(f"No candidate log files or all logs already sent to topic {self.__topic!r}")
             self.last_published_log_epoch = _dt.now().timestamp()
             self.__store_last_published_log_epoch()
             return
 
-        log.info("Published messages to broker: {}".format(published["count"]))
-        log.info("First published in batch: {}".format(published["first_in_batch"]))
-        log.info("Last published in batch: {}".format((log_epoch, log_str)))
+        log.info("Published messages to topic {!r}: {}".format(self.__topic, published["count"]))
+        log.debug("First published in batch: {}".format(published["first_in_batch"]))
+        log.debug("Last published in batch: {}".format((log_str, log_epoch)))
 
         if published["youngest_log_epoch"] > self.last_published_log_epoch:
             self.last_published_log_epoch = published["youngest_log_epoch"]
@@ -141,25 +142,42 @@ class LogPublisher:
             return
 
         df = pd.DataFrame([l.strip().split()[:5] + [l.strip()] for l in lines])
+        # print(f"Created dataframe:\n{df.head(3)}")
+
         if not self.__datetime_columns_patterns:
             self.__parse_datetime_patterns(df.iloc[0])
+            if not self.__datetime_columns_patterns:
+                log.error(f"Unable to interpret a datetime patten from the first line of {source.as_posix()}")
+                return
 
-        if not self.__datetime_columns_patterns:
-            log.error(f"Unable to interpret a datetime patten from the first line of {source.as_posix()}")
-            return
+        df_dt_cols = []
+        dt_patterns = []
+        tz_aware = False
+        for c, p in self.__datetime_columns_patterns.items():
+            df_dt_cols.append(int(c))
+            dt_patterns.append(p)
+            if not tz_aware and p == "%z":
+                tz_aware = True
 
-        df[0] = pd.to_datetime(
-            df[
-                [int(c) for c in self.__datetime_columns_patterns]
-            ]
-            .astype(str)
-            .agg(' '.join, axis="columns")
-            .str.replace(r"[^\w/:+-., ]", "", regex=True),
-            format=" ".join(self.__datetime_columns_patterns.values()),
-        ).astype('int64') // 10 ** 9  # cast datetime collection as epoch
+        # print(f"Parsed datetime columns from dataframe: {df_dt_cols} (tz aware: {tz_aware})")
+
+        df_dt_data = df[df_dt_cols].astype(str).agg(" ".join, axis="columns").str.replace(r"[^\w/:+-., ]", "", regex=1)
+        # print(f"Parsed datetime data from dataframe:\n{df_dt_data.head(3)}")
+
+        df_dt_objs = pd.to_datetime(df_dt_data, format=" ".join(dt_patterns), utc=tz_aware)
+        if not tz_aware:
+            df_dt_objs = df_dt_objs.dt.tz_localize(_dt.now().astimezone().strftime("%z"))
+        # print(f"Parsed datetime objects from dataframe:\n{df_dt_objs.head(3)}")
+
+        df_dt_epoch = df_dt_objs.astype("int64") // 10 ** 9  # cast datetime collection as epoch
+        # print(f"Parsed epoch from dataframe:\n{df_dt_epoch.head(3)}")
+
+        df[0] = df_dt_epoch
         df.drop(df.columns[1:-1], axis="columns", inplace=True)
+        # print(f"Cleansed dataframe:\n{df.head(3)}")
 
         df = df[df[0] > self.last_published_log_epoch]
+        # print(f"Filtered dataframe:\n{df.head(3)}")
 
         for row in df.values:
             yield row
@@ -186,7 +204,7 @@ class LogPublisher:
         with open(self.__state_file, "w") as f:
             f.write(str(self.last_published_log_epoch))
 
-        log.info("State persisted")
+        log.debug(f"State persisted in {self.__state_file.as_posix()!r}")
 
 
 def run():
