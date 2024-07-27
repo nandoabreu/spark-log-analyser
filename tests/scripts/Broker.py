@@ -7,7 +7,7 @@ from confluent_kafka import Producer as KafkaProducer
 
 import app.config as cfg
 
-KAFKA_SERVERS = {"bootstrap.servers": ",".join(cfg.KAFKA_SERVERS)}
+KAFKA_SERVER = {"bootstrap.servers": cfg.KAFKA_SERVER}
 TOPIC_PER_LOGS_DIR = {
     "/tmp/tests/http": cfg.HTTP_TOPIC_NAME,
     "/tmp/tests/app": cfg.APP_TOPIC_NAME,
@@ -22,8 +22,8 @@ class Producer:
 
     def __init__(self):
         """Initialize Publisher"""
-        self.__producer = KafkaProducer(KAFKA_SERVERS)
-        log.debug(f'Connection established with: {", ".join(cfg.KAFKA_SERVERS)!r}')
+        self.__producer = KafkaProducer(KAFKA_SERVER)
+        log.debug(f'Connection established with: {cfg.KAFKA_SERVER!r}')
 
         self.__counter = 0
 

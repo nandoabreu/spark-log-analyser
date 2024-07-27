@@ -33,8 +33,4 @@ APP_TOPIC_NAME: str = config("APP_TOPIC_NAME", default="responses")
 BIND_HOST: str = config("BIND_HOST", default="127.0.0.1")
 BIND_PORT: int = config("BIND_PORT", default=8080, cast=int)
 
-KAFKA_SERVERS = []  # to be dynamically set and published as tuple
-for item in config("KAFKA_SERVERS", default="").split(","):
-    if item and item not in KAFKA_SERVERS:
-        KAFKA_SERVERS.append(item)
-KAFKA_SERVERS = tuple(KAFKA_SERVERS)
+KAFKA_SERVER: int = config("KAFKA_SERVER", default="localhost:9092")
