@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from datetime import datetime as _dt
 from locale import LC_TIME, setlocale
-from logging import Formatter, getLogger
+from logging import Formatter, getLogger, StreamHandler
 from logging.handlers import RotatingFileHandler
 from os import makedirs
 from prettyconf import config
@@ -43,19 +43,32 @@ print("# Other vars can be set in the [dev] session of the env.toml file before 
 setlocale(LC_TIME, "{}.UTF-8".format(LOGS_LANG))
 print("Locale set to {}.UTF-8. Start creation of mocked logs for {}:".format(LOGS_LANG, LOG_TYPE))
 
-try:
-    created_logs = -1
-    users = list(MOCKED_REQUESTERS) * 3 + ["-"]
 
+def get_file_logger():
     makedirs(LOGS_DIR, exist_ok=True)
+
+    logger = getLogger()
+    logger.setLevel("DEBUG")
+
     handler = RotatingFileHandler(LOGS_PATH, maxBytes=100 * 1024, backupCount=3)
     formatter = Formatter('%(message)s')
     handler.setFormatter(formatter)
-    log = getLogger()
-    log.setLevel("DEBUG")
-    log.addHandler(handler)
+    logger.addHandler(handler)
 
-    for created_logs in range(LOG_LINES):
+    # Avoid stdout logging
+    for handler in logger.handlers:
+        if isinstance(handler, StreamHandler):
+            logger.removeHandler(handler)
+
+    return logger
+
+
+try:
+    i = -1
+    users = list(MOCKED_REQUESTERS) * 3 + ["-"]
+    log = get_file_logger()
+
+    for i in range(LOG_LINES):
         log_vars = {"timestamp": _dt.now().strftime(TIMESTAMP_PATTERN.format(timezone=LOGS_TIMEZONE))}
 
         if LOG_TYPE == "APP":
@@ -77,14 +90,11 @@ try:
 
         log.debug(LOG_PATTERN.format(**log_vars))
 
-        if created_logs > 0:
-            print("\rCreated {}/{} lines of log ".format(created_logs + 1, LOG_LINES), end="")
-
-            if created_logs % 3 == 0:
-                sleep(random())
+        print("\rCreated {}/{} lines of log ".format(i + 1, LOG_LINES), end="")
+        sleep(random() + random())
 
 except KeyboardInterrupt:
     print("\rCreation aborted by user request.")
 
 finally:
-    print("\rCreated {} lines of log in {}".format(created_logs + 1, LOGS_DIR))
+    print("\rCreated {} lines of log in {}".format(i + 1, LOGS_DIR))
