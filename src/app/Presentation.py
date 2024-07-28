@@ -13,17 +13,18 @@ from dash import dcc, html
 
 from . import config as cfg
 from .Logger import log
-from .Analytics import Engine
+from .Analytics import Spark
 from .Helper import fetch_host_ip
 
+DEFAULT_RANGE = "1d"
 TOPICS = (cfg.HTTP_TOPIC_NAME, cfg.APP_TOPIC_NAME)
 
 
 log.info("Call engine")
-e = Engine()
-e.start(app_name=cfg.APP_NAME)
-e.subscribe(topics=TOPICS)
-engine = e.process()
+spark = Spark()
+spark.start(app_name=cfg.APP_NAME)
+spark.subscribe(topics=TOPICS)
+engine = spark.process()
 
 
 web = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -35,12 +36,12 @@ web.layout = dbc.Container([
             dcc.Dropdown(
                 id='time-range-dropdown',
                 options=[
-                    {'value': '1H', 'label': 'Last hour'},
-                    {'value': '1D', 'label': 'Last 24 hours'},
-                    {'value': '7D', 'label': 'Last 7 days'},
-                    {'value': '30D', 'label': 'Last 30 days'},
+                    {'value': '1h', 'label': 'Last hour'},
+                    {'value': '1d', 'label': 'Last 24 hours'},
+                    {'value': '7d', 'label': 'Last 7 days'},
+                    {'value': '1m', 'label': 'Last 30 days'},
                 ],
-                value='1D'
+                value=DEFAULT_RANGE
             ),
             dcc.Graph(id='line-plot'),
             dcc.Interval(
@@ -62,6 +63,8 @@ def update_line_plot(*args):
 
     selected_range = args[0]
     log.debug(f"App requested data of {selected_range=}, after update={args[1]}")
+    update = args[1]
+    log.debug(f"App requested data of {selected_range=}, after {update=}")
 
     try:
         data = []
@@ -80,16 +83,16 @@ def update_line_plot(*args):
 
     now = pd.Timestamp.now()
 
-    if selected_range == '1H':
+    if selected_range == '1h':
         df_resampled = df.set_index('range_end').resample('1min').sum().reset_index()
         requested_df = df_resampled[df_resampled['range_end'] >= (now - pd.Timedelta(hours=1))]
-    elif selected_range == '1D':
+    elif selected_range == '1d':
         df_resampled = df.set_index('range_end').resample('h').sum().reset_index()
         requested_df = df_resampled[df_resampled['range_end'] >= (now - pd.Timedelta(days=1))]
-    elif selected_range == '7D':
+    elif selected_range == '7d':
         df_resampled = df.set_index('range_end').resample('D').sum().reset_index()
         requested_df = df_resampled[df_resampled['range_end'] >= (now - pd.Timedelta(days=7))]
-    elif selected_range == '30D':
+    elif selected_range == '1m':
         df_resampled = df.set_index('range_end').resample('D').sum().reset_index()
         requested_df = df_resampled[df_resampled['range_end'] >= (now - pd.Timedelta(days=30))]
 

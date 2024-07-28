@@ -17,7 +17,7 @@ from .Helper import fetch_host_ip
 TOPICS = (cfg.HTTP_TOPIC_NAME, cfg.APP_TOPIC_NAME)
 
 
-class Engine:
+class Spark:
     """Engine class for Spark session with Kafka integration.
 
     This class instantiates the Kafka engine for processing data.
@@ -30,7 +30,7 @@ class Engine:
         process(): Start processing the topics' data.
 
     Examples:
-        >>> e = Engine()
+        >>> e = Spark()
         >>> e.start()
         >>> e.subscribe()
         >>> e.process()
