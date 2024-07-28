@@ -7,12 +7,10 @@ from os import environ
 import pandas as pd
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, window, from_json
-from pyspark.sql.types import StructType, StructField, TimestampType, StringType
 
 from . import config as cfg
 from .Logger import log
-from .Helper import fetch_host_ip
-
+from .Helper import fetch_host_ip, fetch_app_log_filters
 
 TOPICS = (cfg.HTTP_TOPIC_NAME, cfg.APP_TOPIC_NAME)
 
@@ -63,8 +61,10 @@ class Spark:
                 .option("subscribe", topic) \
                 .load()
 
-    def process(self) -> SparkSession:
+    def process(self) -> None:
         """Start processing the topics' data."""
+        app_log_filters = {}
+
         for topic, spark_df in self.__subscriptions.items():
             topic = topic.split("-")[-1]
 
@@ -73,7 +73,14 @@ class Spark:
                 "CAST(value AS STRING) AS value"
             ).select("moment", "value")
             spark_df = spark_df.filter(col("moment") > (pd.Timestamp.now() - pd.Timedelta(days=30)))
-            print(f"Spark DF set for {topic}: {spark_df}")
+
+            if not app_log_filters and topic in (cfg.APP_TOPIC_NAME,):
+                app_log_filters = fetch_app_log_filters(cfg.APP_LOG_FILTERS_TOML_PATH)
+                filters = app_log_filters.get("log_level", {}).get("accept")
+                if filters:
+                    spark_df = spark_df.filter(~col("value").rlike("|".join(filters)))
+
+            log.debug("Spark DF set for {}: {}".format(topic, spark_df))
 
             gdf = spark_df.groupBy(window(col("moment"), "1 minute")).count() \
                 .withColumnRenamed("count", topic)
