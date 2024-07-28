@@ -19,19 +19,23 @@ MOCKED_REQUESTERS = {
     "calasans@home.homenet": "10.1.1.17",
 }
 
-MOCKED_REQUESTS = ("/", "/index", "/users", "/user?123", "/product?654", "/purchase")
+MOCKED_REQUESTS = ("/", "/index.html", "/users", "/user?123", "/product?654", "/purchase", "/api/data")
 
 LOG_TYPE = config("LOG_TYPE", default="http").upper()
 LOGS_DIR = config("{}_LOGS_DIR".format(LOG_TYPE), default=list(TOPIC_PER_LOGS_DIR.keys())[0])
 LOGS_LANG = config("{}_LOGS_LANG".format(LOG_TYPE), default="en_US")
 LOGS_TIMEZONE = config("{}_LOGS_TIMEZONE".format(LOG_TYPE), default="+00:00")
 
-LOG_PATTERN = r'{ip} - {user} [{timestamp}] "{method} {uri} HTTP/9.9" {code} 999'
+LOG_PATTERNS = [
+    r'{ip} - {user} [{timestamp}] "{method} {uri} HTTP/9.9" {code} 999',
+    r'{ip} - {user} [{timestamp}] "{method} {uri} HTTP/9.9" {code} 999 "-" "Mozilla/5.0 (x64) Chrome/117"',
+    r'{ip} - {user} [{timestamp}] "{method} {uri} HTTP/9.9" {code} 999 "http://r.co/" "Mozilla/5.0 (x64) Chrome/117"',
+]
 TIMESTAMP_PATTERN = r"%d/%b/%Y:%H:%M:%S {timezone}"
 LOGS_PATH = "{}/http-access.log".format(LOGS_DIR)
 
 if LOG_TYPE == "APP":
-    LOG_PATTERN = r'{timestamp} [{level}] {page}: {message} {param}'
+    LOG_PATTERNS = [r'{timestamp} [{level}] {page}: {message} {param}']
     TIMESTAMP_PATTERN = r"%F %T"
     LOGS_PATH = "{}/app.log".format(LOGS_DIR)
 
@@ -88,7 +92,8 @@ try:
             log_vars["code"] = sample((200, 200, 200, 201, 201, 302, 401, 503), k=1)[0]
             log_vars["uri"] = sample(MOCKED_REQUESTS, k=1)[0]
 
-        log.debug(LOG_PATTERN.format(**log_vars))
+        pattern = sample(LOG_PATTERNS, k=1)[0]
+        log.debug(pattern.format(**log_vars))
 
         print("\rCreated {}/{} lines of log ".format(i + 1, LOG_LINES), end="")
         sleep(random() + random())
