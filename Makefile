@@ -27,6 +27,9 @@ setup-dev:
 	@poetry install -v
 
 
+run:
+	@PYTHONPATH=${SRC_DIR} poetry run python -m app
+
 test-start-kafka:
 	@podman run --rm -d --network=host --hostname=kafka --name=kafka docker.io/apache/kafka:3.7.0
 	@echo "Kafka service should be running on 127.0.0.1, port 9092"

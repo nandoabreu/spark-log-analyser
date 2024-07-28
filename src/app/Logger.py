@@ -6,7 +6,7 @@ This module adds a simple logger to the app.
 import logging
 from sys import stdout
 
-from app.config import LOG_NAME, LOG_LEVEL
+from .config import LOG_NAME, LOG_LEVEL
 
 # noinspection SpellCheckingInspection
 formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
