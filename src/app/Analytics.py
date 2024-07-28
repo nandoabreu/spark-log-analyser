@@ -68,8 +68,10 @@ class Spark:
         for topic, spark_df in self.__subscriptions.items():
             topic = topic.split("-")[-1]
 
-            spark_df = spark_df.selectExpr("CAST(CAST(timestamp AS LONG) / 1000 AS timestamp) AS moment", "CAST(value AS STRING) AS value") \
-                .select("moment", "value")
+            spark_df = spark_df.selectExpr(
+                "CAST(CAST(timestamp AS LONG) / 1000 AS timestamp) AS moment",
+                "CAST(value AS STRING) AS value"
+            ).select("moment", "value")
             spark_df = spark_df.filter(col("moment") > (pd.Timestamp.now() - pd.Timedelta(days=30)))
             print(f"Spark DF set for {topic}: {spark_df}")
 
