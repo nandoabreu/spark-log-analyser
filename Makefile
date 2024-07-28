@@ -41,14 +41,14 @@ test-start-kafka-ui:
 	@echo "Kafka UI should be running on http://127.0.0.1:8080/"
 
 test-create-mocked-logs:
-	@LOG_TYPE=HTTP LOG_LINES=300 poetry run python tests/scripts/create-mocked-logs.py
-	@LOG_TYPE=APP LOG_LINES=300 poetry run python tests/scripts/create-mocked-logs.py
+	@PYTHONPATH=src LOG_TYPE=HTTP LOG_LINES=10 poetry run python tests/scripts/create-mocked-logs.py
+	@PYTHONPATH=src LOG_TYPE=APP LOG_LINES=9 poetry run python tests/scripts/create-mocked-logs.py
 
 test-publish-mocked-logs:
 	@PYTHONPATH=src poetry run python tests/scripts/publish-logs-to-broker.py
 
 test-created-topics:
-	podman exec -it kafka ls -ltr /tmp/kraft-combined-logs | grep -e requests -e responses
+	@podman exec -it kafka ls -ltr /tmp/kraft-combined-logs | grep -e requests -e responses
 
 test-published-logs:
 	@PYTHONPATH=src poetry run python tests/scripts/test-broker-published.py
