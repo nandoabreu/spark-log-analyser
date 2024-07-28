@@ -24,7 +24,7 @@ log.info("Call engine")
 spark = Spark()
 spark.start(app_name=cfg.APP_NAME)
 spark.subscribe(topics=TOPICS)
-engine = spark.process()
+engine = None
 
 
 web = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -61,10 +61,12 @@ web.layout = dbc.Container([
 def update_line_plot(*args):
     log.debug(f"Method update_line_plot called with args: {args}")
 
-    selected_range = args[0]
-    log.debug(f"App requested data of {selected_range=}, after update={args[1]}")
-    update = args[1]
-    log.debug(f"App requested data of {selected_range=}, after {update=}")
+    selected_range, update_seq = args[:2]
+    log.debug(f"App requested data of {selected_range=}, after {update_seq=}")
+
+    global engine
+    if not engine:
+        engine = spark.process()
 
     try:
         data = []
