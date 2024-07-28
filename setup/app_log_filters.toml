@@ -1,0 +1,4 @@
+[log_level]
+position = 2  # In `<date> <time> [LEVEL] <msg>`, level is the 3rd word/position
+accept = ["DEBUG", "INFO", "WARNING"]
+clean_up_pattern = '\[\b|\b]'

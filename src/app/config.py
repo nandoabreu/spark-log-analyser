@@ -27,10 +27,11 @@ APP_NAME: str = config("APP_NAME", default="App Name")
 LOG_LEVEL: str = config("LOG_LEVEL", default="INFO")
 LOG_NAME: str = config("LOG_NAME", default=APP_NAME.replace(" ", "-").lower())
 
+KAFKA_SERVER: int = config("KAFKA_SERVER", default="localhost:9092")
 HTTP_TOPIC_NAME: str = config("HTTP_TOPIC_NAME", default="requests")
 APP_TOPIC_NAME: str = config("APP_TOPIC_NAME", default="responses")
 
+APP_LOG_FILTERS_TOML_PATH: str = config("APP_LOG_FILTERS_TOML_PATH", default="setup/app_log_filters.toml")
+
 BIND_HOST: str = config("BIND_HOST", default="127.0.0.1")
 BIND_PORT: int = config("BIND_PORT", default=8080, cast=int)
-
-KAFKA_SERVER: int = config("KAFKA_SERVER", default="localhost:9092")
