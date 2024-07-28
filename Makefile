@@ -50,6 +50,10 @@ test-publish-mocked-logs:
 test-created-topics:
 	podman exec -it kafka ls -ltr /tmp/kraft-combined-logs | grep -e requests -e responses
 
+test-published-logs:
+	@PYTHONPATH=src poetry run python tests/scripts/test-broker-published.py
+
+
 test-tidy-up:
 	@podman stop kafka-ui 2>/dev/null || true
 	@podman stop kafka 2>/dev/null || true

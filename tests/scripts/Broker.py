@@ -1,9 +1,16 @@
 #!/usr/bin/env python
 """Broker manager for publishing messages"""
 import logging as log
+from concurrent.futures import ThreadPoolExecutor
 from json import dumps
+from os import cpu_count
 
-from confluent_kafka import Producer as KafkaProducer
+from confluent_kafka import (
+    Consumer as KafkaConsumer,
+    Producer as KafkaProducer,
+    KafkaError,
+    KafkaException,
+)
 
 import app.config as cfg
 
@@ -58,3 +65,67 @@ class Producer:
     def __report(error, message):
         if error:
             log.error(f"{error}: Not delivered: {message}")
+
+
+class Consumer:
+    """Broker manager to consume messages from topics"""
+
+    def __init__(self, group: str = "my_group", topics: (str, iter) = "my_topic"):
+        """Initialize Consumer
+
+        Initialize the Broker consumer object.
+
+        Args:
+            group (str): the client's group (topics offsets are fixed for the group)
+            topics (str, iter): One os more names of topics to consume from.
+        """
+        log.debug(f'Broker consumer init on id={id(self)}')
+
+        if isinstance(topics, (str, bytes)):
+            topics = set(topics.split(","))
+        if not isinstance(topics, list):
+            topics = list(topics)
+
+        self.__consumer = KafkaConsumer(KAFKA_SERVER | {
+            "auto.offset.reset": "earliest",
+            "group.id": group,
+        })
+        log.debug(f'Connection established with: {cfg.KAFKA_SERVER!r}')
+
+        log.debug(f"Subscribe to topics: {topics}")
+        self.__consumer.subscribe(topics=topics)
+
+    def consume(self, messages: int = 3) -> iter:
+        """Consumes messages from specified topics
+
+        Args:
+            messages (int): The number os messages to fetch from the topic.
+
+        Yields:
+            tuple: Containing the epoch of the publication and the message itself.
+
+        Raises:
+            KafkaException: For existent topic, end of topic partition queue or data error
+        """
+        executor = ThreadPoolExecutor(max_workers=cpu_count())
+
+        for i in range(messages):
+            data = self.__consumer.poll(timeout=5)
+
+            if data:
+                if data.error():
+                    err = None
+                    if data.error().code() == KafkaError.UNKNOWN_TOPIC_OR_PART:
+                        err = "Topic not yet created: try to produce first"
+                    elif data.error().code() == KafkaError._PARTITION_EOF:
+                        err = f"End of topic {data.topic()!r}: partition {data.partition()}; offset {data.offset()}"
+                    elif data.error():
+                        err = data.error()
+
+                    self.__consumer.close()
+                    raise KafkaException(err)
+
+                executor.submit(self.__consumer.commit, data)
+                yield data.timestamp()[1] // 1_000_000, data.value()
+
+        executor.shutdown(wait=False)
