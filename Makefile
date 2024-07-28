@@ -41,8 +41,8 @@ test-start-kafka-ui:
 	@echo "Kafka UI should be running on http://127.0.0.1:8080/"
 
 test-create-mocked-logs:
-	@PYTHONPATH=src LOG_TYPE=HTTP LOG_LINES=10 poetry run python tests/scripts/create-mocked-logs.py
-	@PYTHONPATH=src LOG_TYPE=APP LOG_LINES=9 poetry run python tests/scripts/create-mocked-logs.py
+	@PYTHONPATH=src LOG_TYPE=HTTP LOG_LINES=99 poetry run python tests/scripts/create-mocked-logs.py
+	@PYTHONPATH=src LOG_TYPE=APP LOG_LINES=97 poetry run python tests/scripts/create-mocked-logs.py
 
 test-publish-mocked-logs:
 	@PYTHONPATH=src poetry run python tests/scripts/publish-logs-to-broker.py
