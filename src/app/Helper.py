@@ -4,7 +4,15 @@
 Description
 """
 from functools import lru_cache
+from pathlib import PosixPath, Path
 from subprocess import run as proc_run
+
+try:
+    # noinspection PyUnresolvedReferences
+    from tomli import load, TOMLDecodeError  # Python < v3.11
+except ModuleNotFoundError:
+    # noinspection PyUnresolvedReferences
+    from tomllib import load, TOMLDecodeError
 
 
 @lru_cache()
@@ -38,5 +46,25 @@ def fetch_host_ip() -> str:
     return ip
 
 
-if __name__ == "__main__":
-    print(fetch_host_ip())
+@lru_cache()
+def fetch_app_log_filters(app_log_filters_path: (str, Path)) -> dict:
+    """Fetch custom application's log filters
+
+    This implementation fetches settings from a .toml file to be used to filter log messages
+    with the engine processing of topics' app log messages.
+
+    Args:
+        app_log_filters_path (str, Path): The path to the .toml file.
+
+    Returns:
+        dict: As in: {'log_level': {'position': 2, 'accept': ['DEBUG', 'INFO'], 'clean_up_pattern': '\\[\\b|\\b]'}}
+    """
+    if not isinstance(app_log_filters_path, PosixPath):
+        app_log_filters_path = Path(app_log_filters_path)
+
+    app_log_filters = {}
+    if app_log_filters_path.exists():
+        with open(app_log_filters_path, "rb") as f:
+            app_log_filters = load(f)
+
+    return app_log_filters
