@@ -1,42 +1,49 @@
 # spark-log-analyser
 
-Spark log analyser, merging Apache with Application logs to analyse users' request to Apache and response from App.
+Spark log analyser, merging http logs with application logs to analyse requests vs responses.
 
-This project delivers an end-to-end solution to merge logs from Apache and an web App to compare requests and
-responses. This project's main goal is to analyse streaming data from Kafka, using Spark.
+This project delivers an app that merges http and a web app to compare requests and
+responses. This project is a POC to consume data from Kafka by a Spark engine,
+and deliver a interactive plot using Dash.
 
+![Dashboard](docs/dash.gif)
 
-## Requisites
+_**Note:** this is a v0.1 publication and several project's requirements are to be added in future releases._
 
-To analyse streaming data, a Kafka service is expected to be running and having Apache and App logs delivered to it.
-This solution has a test scenario to mock data, in case the environment isn't already set.
+### Requisites
 
-The logic here considers patterns in Apache and App logs that will probably differ from a production environment,
-so some minimal Python coding may be required to tune how the streaming data is parsed.
+To analyse streaming data, a Kafka service is expected to be running and receiving
+http and app logs. This app has a test scenario to mock data, in case of need.
+[This doc will set up a test env](docs/create-mock-logs.md).
+
+_**Note:** The logic here considers patterns in http and a web app's logs that will certainly differ
+from a production environment, to use production htt and app logs,
+some Python coding may be required._
+
+## Set up and start
+
+The project's dev env must be set to run this project and [Python Poetry](https://python-poetry.org/docs/)
+is used to manage the virtual env. Pip can be used instead:
+there is a [requirements.txt](setup/requirements.txt) in the setup directory.
+
+To set the dev env, call:
+```shell
+make setup-dev
+```
 
 ### Environment settings
 
-All settings needed for this solution to run are in the [env.toml](env.toml) file at the root of this project.
-`make` commands are responsible for updating the dynamically created [.env](.env) on every [Makefile](Makefile)
-run.
+All settings required for this app are in the [env.toml](env.toml) file at the root of the project.
+`make` commands are responsible for updating the dynamically created [.env](.env)
+on every [Makefile](Makefile) (make) call.
 
-### Publish logs to Kafka
+### Start the App
 
-Once this project's goal is about processing data already in Kafka, there will be no support for publishing
-data to Kafka, however, the test environment for this project has scripts that can be used to process
-and publish production logs to Kafka.
-
-### Set the test environment
-
-The following commands will enable a test environment with:
-
-- A Kafka service running locally on a Podman container
-  - To install Podman, [check this link](https://podman.io/docs/installation#installing-on-linux)
-- Mocked Apache and App logs, created locally with scripts
-- Apache and App logs stream publishing to Kafka
+_**Note**: the current version of this project does not check if Kafka is online. If the app starts and raises
+errors, check if the broker is up and running._
 
 ```shell
-make setup-dev
-make test-start-kafka
-make test-create-mocked-logs
+make run
 ```
+
+Have fun!
