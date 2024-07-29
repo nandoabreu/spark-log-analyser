@@ -155,7 +155,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "importlib-metadata"
-version = "8.0.0"
+version = "8.2.0"
 description = "Read metadata from Python packages"
 category = "main"
 optional = false
@@ -211,7 +211,7 @@ python-versions = ">=3.5"
 name = "numpy"
 version = "2.0.1"
 description = "Fundamental package for array computing in Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.9"
 
@@ -227,7 +227,7 @@ python-versions = ">=3.8"
 name = "pandas"
 version = "2.2.2"
 description = "Powerful data structures for data analysis, time series, and statistics"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.9"
 
@@ -268,7 +268,7 @@ xml = ["lxml (>=4.9.2)"]
 
 [[package]]
 name = "plotly"
-version = "5.22.0"
+version = "5.23.0"
 description = "An open-source, interactive data visualization library for Python"
 category = "main"
 optional = false
@@ -330,7 +330,7 @@ six = ">=1.5"
 name = "pytz"
 version = "2024.1"
 description = "World timezone definitions, modern and historical"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
@@ -365,7 +365,7 @@ six = ">=1.7.0"
 
 [[package]]
 name = "setuptools"
-version = "71.0.4"
+version = "72.0.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 category = "main"
 optional = false
@@ -374,7 +374,7 @@ python-versions = ">=3.8"
 [package.extras]
 core = ["importlib-metadata (>=6)", "importlib-resources (>=5.10.2)", "jaraco.text (>=3.7)", "more-itertools (>=8.8)", "ordered-set (>=3.1.1)", "packaging (>=24)", "platformdirs (>=2.6.2)", "tomli (>=2.0.1)", "wheel (>=0.43.0)"]
 doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "pyproject-hooks (!=1.1)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-favicon", "sphinx-inline-tabs", "sphinx-lint", "sphinx-notfound-page (>=1,<2)", "sphinx-reredirects", "sphinxcontrib-towncrier"]
-test = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "importlib-metadata", "ini2toml[lite] (>=0.14)", "jaraco.develop (>=7.21)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "jaraco.test", "mypy (==1.10.0)", "packaging (>=23.2)", "pip (>=19.1)", "pyproject-hooks (!=1.1)", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-home (>=0.5)", "pytest-mypy", "pytest-perf", "pytest-ruff (<0.4)", "pytest-ruff (>=0.2.1)", "pytest-ruff (>=0.3.2)", "pytest-subprocess", "pytest-timeout", "pytest-xdist (>=3)", "tomli", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel"]
+test = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "importlib-metadata", "ini2toml[lite] (>=0.14)", "jaraco.develop (>=7.21)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.2.0)", "jaraco.test", "mypy (>=1.11.0,<1.12.0)", "packaging (>=23.2)", "pip (>=19.1)", "pyproject-hooks (!=1.1)", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-home (>=0.5)", "pytest-mypy", "pytest-perf", "pytest-ruff (<0.4)", "pytest-ruff (>=0.2.1)", "pytest-ruff (>=0.3.2)", "pytest-subprocess", "pytest-timeout", "pytest-xdist (>=3)", "tomli", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel"]
 
 [[package]]
 name = "six"
@@ -416,7 +416,7 @@ python-versions = ">=3.8"
 name = "tzdata"
 version = "2024.1"
 description = "Provider of IANA time zone data"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=2"
 
@@ -463,7 +463,7 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "c3aa4a59a0c01afbdc76dfd5f96dcdaa942bc93fee1981ab60c95b3051068fd6"
+content-hash = "b070d2d3a4a770029318ea4876e13033bedf6461beae3286ee0f89759428e3ee"
 
 [metadata.files]
 blinker = [
@@ -639,8 +639,8 @@ idna = [
     {file = "idna-3.7.tar.gz", hash = "sha256:028ff3aadf0609c1fd278d8ea3089299412a7a8b9bd005dd08b9f8285bcb5cfc"},
 ]
 importlib-metadata = [
-    {file = "importlib_metadata-8.0.0-py3-none-any.whl", hash = "sha256:15584cf2b1bf449d98ff8a6ff1abef57bf20f3ac6454f431736cd3e660921b2f"},
-    {file = "importlib_metadata-8.0.0.tar.gz", hash = "sha256:188bd24e4c346d3f0a933f275c2fec67050326a856b9a359881d7c2a697e8812"},
+    {file = "importlib_metadata-8.2.0-py3-none-any.whl", hash = "sha256:11901fa0c2f97919b288679932bb64febaeacf289d18ac84dd68cb2e74213369"},
+    {file = "importlib_metadata-8.2.0.tar.gz", hash = "sha256:72e8d4399996132204f9a16dcc751af254a48f8d1b20b9ff0f98d4a8f901e73d"},
 ]
 itsdangerous = [
     {file = "itsdangerous-2.2.0-py3-none-any.whl", hash = "sha256:c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef"},
@@ -799,8 +799,8 @@ pandas = [
     {file = "pandas-2.2.2.tar.gz", hash = "sha256:9e79019aba43cb4fda9e4d983f8e88ca0373adbb697ae9c6c43093218de28b54"},
 ]
 plotly = [
-    {file = "plotly-5.22.0-py3-none-any.whl", hash = "sha256:68fc1901f098daeb233cc3dd44ec9dc31fb3ca4f4e53189344199c43496ed006"},
-    {file = "plotly-5.22.0.tar.gz", hash = "sha256:859fdadbd86b5770ae2466e542b761b247d1c6b49daed765b95bb8c7063e7469"},
+    {file = "plotly-5.23.0-py3-none-any.whl", hash = "sha256:76cbe78f75eddc10c56f5a4ee3e7ccaade7c0a57465546f02098c0caed6c2d1a"},
+    {file = "plotly-5.23.0.tar.gz", hash = "sha256:89e57d003a116303a34de6700862391367dd564222ab71f8531df70279fc0193"},
 ]
 prettyconf = [
     {file = "prettyconf-2.2.1.tar.gz", hash = "sha256:2478d16bc2596c9863e93dd182ca70b71f636f0e169ab23288906c53147cfdbc"},
@@ -829,8 +829,8 @@ retrying = [
     {file = "retrying-1.3.4.tar.gz", hash = "sha256:345da8c5765bd982b1d1915deb9102fd3d1f7ad16bd84a9700b85f64d24e8f3e"},
 ]
 setuptools = [
-    {file = "setuptools-71.0.4-py3-none-any.whl", hash = "sha256:ed2feca703be3bdbd94e6bb17365d91c6935c6b2a8d0bb09b66a2c435ba0b1a5"},
-    {file = "setuptools-71.0.4.tar.gz", hash = "sha256:48297e5d393a62b7cb2a10b8f76c63a73af933bd809c9e0d0d6352a1a0135dd8"},
+    {file = "setuptools-72.0.0-py3-none-any.whl", hash = "sha256:98b4d786a12fadd34eabf69e8d014b84e5fc655981e4ff419994700434ace132"},
+    {file = "setuptools-72.0.0.tar.gz", hash = "sha256:5a0d9c6a2f332881a0153f629d8000118efd33255cfa802757924c53312c76da"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
