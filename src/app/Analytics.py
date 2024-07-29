@@ -61,7 +61,7 @@ class Spark:
                 .option("subscribe", topic) \
                 .load()
 
-    def process(self) -> None:
+    def process(self) -> SparkSession:
         """Start processing the topics' data."""
         app_log_filters = {}
 
