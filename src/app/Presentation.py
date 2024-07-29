@@ -24,8 +24,7 @@ log.info("Call engine")
 spark = Spark()
 spark.start(app_name=cfg.APP_NAME)
 spark.subscribe(topics=TOPICS)
-engine = None
-
+engine = spark.process()
 
 web = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -63,10 +62,6 @@ def update_line_plot(*args):
 
     selected_range, update_seq = args[:2]
     log.debug(f"App requested data of {selected_range=}, after {update_seq=}")
-
-    global engine
-    if not engine:
-        engine = spark.process()
 
     try:
         data = []
